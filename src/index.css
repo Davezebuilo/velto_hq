@@ -1,0 +1,317 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-pink: #f00be9;
+  --color-brand-blue: #007bff;
+  --color-heading: #efefef;
+
+  --breakpoint-xl: 1400px;
+
+  --animate-pulse-disc: pulse-disc 3.2s ease-in-out infinite;
+
+  @keyframes pulse-disc {
+    0%,
+    100% {
+      scale: 1;
+      opacity: 1;
+    }
+    50% {
+      scale: 1.07;
+      opacity: 0.55;
+    }
+  }
+}
+
+/* Registered so the conic-gradient angle can be animated. */
+@property --glow-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Keep anchored sections clear of the fixed navbar. */
+    scroll-padding-top: 90px;
+    background: #000;
+  }
+
+  body {
+    @apply bg-black font-sans text-white antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-brand-pink) 60%, transparent);
+  }
+}
+
+@layer components {
+  /* Site container: 1412px content at the 1512px design width, 20px gutters on mobile. */
+  .container-site {
+    @apply mx-auto w-full max-w-[1452px] px-5;
+  }
+
+  /* Frosted card used by the payment, about and CTA sections. */
+  .glass-card {
+    @apply relative overflow-hidden rounded-[24px] border border-white/10 bg-white/5 backdrop-blur-[40px] lg:rounded-[40px];
+  }
+
+  /* Pill with a brand-gradient border that spins round. Layers, back to front: the gradient on the
+     border box, a blurred copy spilling outside (::before, the glow), the dark fill covering
+     everything inside the border (::after), then the label. */
+  .glow-border {
+    --glow: conic-gradient(
+      from var(--glow-angle),
+      var(--color-brand-pink),
+      var(--color-brand-blue),
+      var(--color-brand-pink)
+    );
+    position: relative;
+    isolation: isolate;
+    border: 1.5px solid transparent;
+    background: var(--glow) border-box;
+    animation: glow-spin 3s linear infinite;
+  }
+
+  .glow-border::before,
+  .glow-border::after {
+    content: '';
+    position: absolute;
+    border-radius: inherit;
+  }
+
+  .glow-border::before {
+    inset: -3px;
+    z-index: -2;
+    background: var(--glow);
+    filter: blur(10px);
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .glow-border::after {
+    inset: 0;
+    z-index: -1;
+    background: #0a0a0c;
+  }
+
+  .glow-border:hover::before {
+    opacity: 1;
+  }
+
+  .section-title {
+    @apply text-center text-[25px] leading-tight font-extrabold lg:text-[50px];
+  }
+
+  .section-sub {
+    @apply text-center text-base text-white/60 lg:text-[25px] lg:leading-[46px];
+  }
+}
+
+@layer utilities {
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 0.7s ease,
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Meshing gears: same tooth count, so equal speed in opposite directions keeps the teeth engaged. */
+  .gear-spin {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: gear-spin 12s linear infinite;
+  }
+
+  .gear-spin-reverse {
+    animation-direction: reverse;
+  }
+
+  @keyframes glow-spin {
+    to {
+      --glow-angle: 360deg;
+    }
+  }
+
+  @keyframes gear-spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /* Key: slide in, settle, twist ~75° about the shaft (seen side-on as a vertical squash), hold
+     while the keyhole lights up, twist back, pull out. */
+  .key-unlock {
+    transform-box: view-box;
+    transform-origin: 0 347.5px;
+    animation: key-unlock 5s infinite;
+  }
+
+  .keyhole-face {
+    animation: keyhole-unlock 5s infinite;
+  }
+
+  @keyframes key-unlock {
+    0% {
+      transform: translateX(-130px) scaleY(1);
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    20% {
+      transform: translateX(6px) scaleY(1);
+      animation-timing-function: ease-in-out;
+    }
+    25%,
+    30% {
+      transform: translateX(0) scaleY(1);
+      animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    44%,
+    62% {
+      transform: translateX(0) scaleY(0.26);
+      animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    74%,
+    80% {
+      transform: translateX(0) scaleY(1);
+      animation-timing-function: cubic-bezier(0.64, 0, 0.78, 0);
+    }
+    100% {
+      transform: translateX(-130px) scaleY(1);
+    }
+  }
+
+  /* About rings: each ring orbits the logo centre (the local origin of its group). Duration and
+     direction are set per ring in AboutRings.tsx; .rings-paused is toggled while off screen. */
+  .ring-orbit {
+    transform-box: view-box;
+    transform-origin: 0 0;
+    animation: ring-orbit linear infinite;
+  }
+
+  .rings-paused .ring-orbit {
+    animation-play-state: paused;
+  }
+
+  @keyframes ring-orbit {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /* Arrows: rise in from below the card edge along their heading, overshoot slightly, hold,
+     then drift up and fade before restarting out of view. */
+  .arrow-rise {
+    animation: arrow-rise 4.6s infinite both;
+  }
+
+  @keyframes arrow-rise {
+    0% {
+      transform: translate(-70px, 230px);
+      opacity: 1;
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    24% {
+      transform: translate(4px, -10px);
+      animation-timing-function: ease-in-out;
+    }
+    32%,
+    72% {
+      transform: translate(0, 0);
+      opacity: 1;
+      animation-timing-function: ease-in;
+    }
+    88% {
+      transform: translate(22px, -40px);
+      opacity: 0;
+    }
+    89% {
+      transform: translate(-70px, 230px);
+      opacity: 0;
+    }
+    90%,
+    100% {
+      transform: translate(-70px, 230px);
+      opacity: 1;
+    }
+  }
+
+  /* Shield: rises from below with a springy overshoot, floats, then sinks back out of view. */
+  .shield-rise {
+    animation: shield-rise 6s infinite;
+  }
+
+  @keyframes shield-rise {
+    0% {
+      transform: translateY(260px);
+      animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    18% {
+      transform: translateY(-16px);
+      animation-timing-function: ease-in-out;
+    }
+    26% {
+      transform: translateY(0);
+      animation-timing-function: ease-in-out;
+    }
+    40%,
+    68% {
+      transform: translateY(-7px);
+      animation-timing-function: ease-in-out;
+    }
+    54%,
+    82% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0.64, 0, 0.78, 0);
+    }
+    100% {
+      transform: translateY(260px);
+    }
+  }
+
+  /* Keyhole stays dark (so the key keeps its contrast) and glows mint while unlocked. */
+  @keyframes keyhole-unlock {
+    0%,
+    42%,
+    68%,
+    100% {
+      filter: drop-shadow(0 0 0 rgba(185, 255, 214, 0));
+    }
+    48%,
+    60% {
+      filter: drop-shadow(0 0 22px rgba(185, 255, 214, 0.95));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+
+    .animate-pulse-disc,
+    .gear-spin,
+    .key-unlock,
+    .keyhole-face,
+    .arrow-rise,
+    .shield-rise,
+    .ring-orbit,
+    .glow-border {
+      animation: none;
+    }
+
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
